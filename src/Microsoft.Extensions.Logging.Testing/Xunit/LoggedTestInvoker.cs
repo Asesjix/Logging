@@ -47,7 +47,7 @@ namespace Microsoft.Extensions.Logging.Testing
 
         protected override async Task<decimal> InvokeTestMethodAsync(object testClassInstance)
         {
-            for (int i = 0; i < ((testClassInstance as ILoggedTest)?.TestRetries ?? 1); i++)
+            for (int i = 0; i < ((testClassInstance as LoggedTestBase)?.TestRetries ?? 1); i++)
             {
                 Aggregator.Clear();
                 await base.InvokeTestMethodAsync(testClassInstance);

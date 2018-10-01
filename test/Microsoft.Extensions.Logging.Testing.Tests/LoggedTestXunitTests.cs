@@ -131,6 +131,40 @@ namespace Microsoft.Extensions.Logging.Testing.Tests
         }
     }
 
+    public static class RetryCounter
+    {
+        private static int _retryCount;
+
+        public static int RetryCount
+        {
+            get
+            {
+                return _retryCount++;
+            }
+        }
+    }
+
+    [RetryTest(2)]
+    public class LoggedTestXunitRetryTests : LoggedTest
+    {
+        [Fact]
+        public void RetriesUntilSuccess()
+        {
+            Logger.LogInformation("Executing with test retry.");
+
+            // This assert will fail the first time but pass on the second
+            Assert.Equal(1, RetryCounter.RetryCount);
+
+            // This assert will ensure the test ran twice.
+            Assert.Equal(2, TestSink.Writes.Count);
+            Assert.All(TestSink.Writes, write =>
+            {
+                Assert.Equal(LogLevel.Information, write.LogLevel);
+                Assert.Equal("Executing with test retry.", write.Message);
+            });
+        }
+    }
+
     public class LoggedTestXunitInitializationTests : TestLoggedTest
     {
         [Fact]

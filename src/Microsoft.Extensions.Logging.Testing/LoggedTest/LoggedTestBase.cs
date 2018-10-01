@@ -26,7 +26,7 @@ namespace Microsoft.Extensions.Logging.Testing
         // Internal for testing
         internal string ResolvedTestClassName { get; set; }
 
-        public int TestRetries { get; set; } = 1;
+        internal int TestRetries { get; set; }
 
         public ILogger Logger { get; set; }
 
@@ -49,8 +49,13 @@ namespace Microsoft.Extensions.Logging.Testing
         {
             TestOutputHelper = testOutputHelper;
 
+            var retryTestAttribute = methodInfo.GetCustomAttribute<RetryTestAttribute>()
+                ?? methodInfo.DeclaringType.GetCustomAttribute<RetryTestAttribute>()
+                ?? methodInfo.DeclaringType.Assembly.GetCustomAttribute<RetryTestAttribute>();
+            TestRetries = retryTestAttribute?.RetryCount ?? 1;
+
             var classType = GetType();
-            var logLevelAttribute = methodInfo.GetCustomAttribute<LogLevelAttribute>() as LogLevelAttribute;
+            var logLevelAttribute = methodInfo.GetCustomAttribute<LogLevelAttribute>();
             var testName = testMethodArguments.Aggregate(methodInfo.Name, (a, b) => $"{a}-{(b ?? "null")}");
 
             var useShortClassName = methodInfo.DeclaringType.GetCustomAttribute<ShortClassNameAttribute>()
