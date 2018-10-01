@@ -158,6 +158,15 @@ namespace Microsoft.Extensions.Logging.Testing.Tests
         }
 
         [Fact]
+        public void CompletesWithoutRetryOnSuccess()
+        {
+            Assert.Equal(2, TestRetries);
+
+            // This assert would fail on the second run
+            Assert.Equal(0, TestSink.Writes.Count);
+        }
+
+        [Fact]
         public void RetriesUntilSuccess()
         {
             // This assert will fail the first time but pass on the second
