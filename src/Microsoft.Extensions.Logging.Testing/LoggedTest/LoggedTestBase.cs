@@ -26,6 +26,8 @@ namespace Microsoft.Extensions.Logging.Testing
         // Internal for testing
         internal string ResolvedTestClassName { get; set; }
 
+        public int TestRetries { get; set; } = 1;
+
         public ILogger Logger { get; set; }
 
         public ILoggerFactory LoggerFactory { get; set; }

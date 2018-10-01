@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -35,15 +37,32 @@ namespace Microsoft.Extensions.Logging.Testing
         {
             var testClass = base.CreateTestClass();
 
-            if (testClass is ILoggedTest loggedTest)
-            {
-                loggedTest.Initialize(
-                    TestMethod,
-                    TestMethodArguments,
-                    _output ?? ConstructorArguments.SingleOrDefault(a => typeof(ITestOutputHelper).IsAssignableFrom(a.GetType())) as ITestOutputHelper);
-            }
+            (testClass as ILoggedTest).Initialize(
+                TestMethod,
+                TestMethodArguments,
+                _output ?? ConstructorArguments.SingleOrDefault(a => typeof(ITestOutputHelper).IsAssignableFrom(a.GetType())) as ITestOutputHelper);
 
             return testClass;
         }
+
+        protected override async Task<decimal> InvokeTestMethodAsync(object testClassInstance)
+        {
+            for (int i = 0; i < ((testClassInstance as ILoggedTest)?.TestRetries ?? 1); i++)
+            {
+                Aggregator.Clear();
+                await base.InvokeTestMethodAsync(testClassInstance);
+
+                if (!Aggregator.HasExceptions)
+                {
+                    break;
+                }
+            }
+
+            return Timer.Total;
+        }
+
+        [SecuritySafeCritical]
+        static void SetSynchronizationContext(SynchronizationContext context)
+            => SynchronizationContext.SetSynchronizationContext(context);
     }
 }

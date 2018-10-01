@@ -15,6 +15,8 @@ namespace Microsoft.Extensions.Logging.Testing
 
         ITestOutputHelper TestOutputHelper { get; }
 
+        int TestRetries { get; }
+
         // For back compat
         IDisposable StartLog(out ILoggerFactory loggerFactory, LogLevel minLogLevel, string testName);
 
