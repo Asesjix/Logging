@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
@@ -47,8 +46,15 @@ namespace Microsoft.Extensions.Logging.Testing
 
         protected override async Task<decimal> InvokeTestMethodAsync(object testClassInstance)
         {
-            for (int i = 0; i < ((testClassInstance as LoggedTestBase)?.TestRetries ?? 1); i++)
+            var loggedTestBase = testClassInstance as LoggedTestBase;
+            for (int i = 0; i < (loggedTestBase?.TestRetries ?? 1); i++)
             {
+                if (i > 0)
+                {
+                    // This can only occur if the retry count has been overridden on the LoggedTestBase class
+                    loggedTestBase.Logger.LogWarning($"{TestMethod.Name} failed and retries are enabled, re-executing.");
+                }
+
                 Aggregator.Clear();
                 await base.InvokeTestMethodAsync(testClassInstance);
 
@@ -60,9 +66,5 @@ namespace Microsoft.Extensions.Logging.Testing
 
             return Timer.Total;
         }
-
-        [SecuritySafeCritical]
-        static void SetSynchronizationContext(SynchronizationContext context)
-            => SynchronizationContext.SetSynchronizationContext(context);
     }
 }
