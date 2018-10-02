@@ -5,6 +5,8 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -48,11 +50,7 @@ namespace Microsoft.Extensions.Logging.Testing
         public virtual void Initialize(MethodInfo methodInfo, object[] testMethodArguments, ITestOutputHelper testOutputHelper)
         {
             TestOutputHelper = testOutputHelper;
-
-            var retryTestAttribute = methodInfo.GetCustomAttribute<RetryTestAttribute>()
-                ?? methodInfo.DeclaringType.GetCustomAttribute<RetryTestAttribute>()
-                ?? methodInfo.DeclaringType.Assembly.GetCustomAttribute<RetryTestAttribute>();
-            TestRetries = retryTestAttribute?.RetryCount ?? 1;
+            TestRetries = GetRetryAttribute(methodInfo)?.RetryCount ?? 1;
 
             var classType = GetType();
             var logLevelAttribute = methodInfo.GetCustomAttribute<LogLevelAttribute>();
@@ -81,5 +79,35 @@ namespace Microsoft.Extensions.Logging.Testing
         }
 
         public virtual void Dispose() => _testLog.Dispose();
+
+        private RetryTestAttribute GetRetryAttribute(MethodInfo methodInfo)
+        {
+            var os = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OperatingSystems.MacOSX
+                : RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OperatingSystems.Windows
+                : OperatingSystems.Linux;
+
+            var attributeCandidate = methodInfo.GetCustomAttribute<RetryTestAttribute>();
+
+            if (attributeCandidate != null && (attributeCandidate.OperatingSystems & os) != 0)
+            {
+                return attributeCandidate;
+            }
+
+            attributeCandidate = methodInfo.DeclaringType.GetCustomAttribute<RetryTestAttribute>();
+
+            if (attributeCandidate != null && (attributeCandidate.OperatingSystems & os) != 0)
+            {
+                return attributeCandidate;
+            }
+
+            attributeCandidate = methodInfo.DeclaringType.Assembly.GetCustomAttribute<RetryTestAttribute>();
+
+            if (attributeCandidate != null && (attributeCandidate.OperatingSystems & os) != 0)
+            {
+                return attributeCandidate;
+            }
+
+            return null;
+        }
     }
 }
