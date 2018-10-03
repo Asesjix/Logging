@@ -51,6 +51,11 @@ namespace Microsoft.Extensions.Logging.Testing
             {
                 if (i > 0)
                 {
+                    if (!loggedTestBase.RetryPredicate(Aggregator.ToException()))
+                    {
+                        return Timer.Total;
+                    }
+
                     // This can only occur if the retry count has been overridden on the LoggedTestBase class
                     loggedTestBase.Logger.LogWarning($"{TestMethod.Name} failed and retries are enabled, re-executing.");
                 }

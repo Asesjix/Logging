@@ -30,6 +30,8 @@ namespace Microsoft.Extensions.Logging.Testing
 
         internal int TestRetries { get; set; }
 
+        internal Func<Exception, bool> RetryPredicate { get; set; }
+
         public ILogger Logger { get; set; }
 
         public ILoggerFactory LoggerFactory { get; set; }
@@ -50,7 +52,10 @@ namespace Microsoft.Extensions.Logging.Testing
         public virtual void Initialize(MethodInfo methodInfo, object[] testMethodArguments, ITestOutputHelper testOutputHelper)
         {
             TestOutputHelper = testOutputHelper;
-            TestRetries = GetRetryAttribute(methodInfo)?.RetryCount ?? 1;
+
+            var retryAttribute = GetRetryAttribute(methodInfo);
+            TestRetries = retryAttribute?.RetryCount ?? 1;
+            RetryPredicate = retryAttribute?.RetryPredicate;
 
             var classType = GetType();
             var logLevelAttribute = methodInfo.GetCustomAttribute<LogLevelAttribute>();

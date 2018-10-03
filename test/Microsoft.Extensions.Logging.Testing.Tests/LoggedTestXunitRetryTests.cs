@@ -1,6 +1,7 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
 
@@ -51,6 +52,22 @@ namespace Microsoft.Extensions.Logging.Testing.Tests
         {
             Assert.Equal(3, TestRetries);
         }
+
+        [ConditionalFact]
+        [RetryTest(2, typeof(TestRetryPredicate))]
+        public void RetryIfPredicateIsTrue()
+        {
+            if (RetryCounter.RetryCount == 0)
+            {
+                throw new InvalidOperationException();
+            }
+
+            // This assert will ensure the test ran twice.
+            Assert.Equal(1, TestSink.Writes.Count);
+            var loggedMessage = TestSink.Writes.ToArray()[0];
+            Assert.Equal(LogLevel.Warning, loggedMessage.LogLevel);
+            Assert.Equal($"{nameof(RetryIfPredicateIsTrue)} failed and retries are enabled, re-executing.", loggedMessage.Message);
+        }
     }
 
     public static class RetryCounter
@@ -68,6 +85,14 @@ namespace Microsoft.Extensions.Logging.Testing.Tests
         public static void Reset()
         {
             _retryCount = 0;
+        }
+    }
+
+    public static class TestRetryPredicate
+    {
+        public static bool ShouldRetry(Exception ex)
+        {
+            return ex is InvalidOperationException;
         }
     }
 }
